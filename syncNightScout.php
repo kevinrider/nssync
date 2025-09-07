@@ -4,23 +4,23 @@ $oldHash = sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET'));
 $newSecureDomain = getenv('DESTINATION_NIGHTSCOUT_URL');
 $hashedSecret = sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET'));
 
-$currentDate = new DateTime();
-$currentDate->modify('-1 week');
-$endDate = new DateTime();
-$endDate->modify('+1 day');
+$currentDate = new DateTimeImmutable();
+$currentDate = $currentDate->modify('-1 week');
+$endDate = new DateTimeImmutable();
+$endDate = $endDate->modify('+1 day');
 
 syncEntries($currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
 syncTreatments($currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
 syncDeviceStatus($currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
 syncProfile($oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
 
-function syncEntries(DateTime $currentDate, DateTime $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
+function syncEntries(DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
-        $currentDate->modify('+1 day');
+        $currentDate = $currentDate->modify('+1 day');
         $loopToDate = $currentDate->format('Y-m-d');
 
-        if (new DateTime($loopToDate) > $endDate) {
+        if (new DateTimeImmutable($loopToDate) > $endDate) {
             $loopToDate = $endDate->format('Y-m-d');
         }
         $ch = curl_init();
@@ -63,12 +63,12 @@ function syncEntries(DateTime $currentDate, DateTime $endDate, string $oldSecure
     }
 }
 
-function syncTreatments(DateTime $currentDate, DateTime $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
+function syncTreatments(DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
-        $currentDate->modify('+1 day');
+        $currentDate = $currentDate->modify('+1 day');
         $loopToDate = $currentDate->format('Y-m-d');
-        if (new DateTime($loopToDate) > $endDate) {
+        if (new DateTimeImmutable($loopToDate) > $endDate) {
             $loopToDate = $endDate->format('Y-m-d');
         }
         $ch = curl_init();
@@ -111,12 +111,12 @@ function syncTreatments(DateTime $currentDate, DateTime $endDate, string $oldSec
     }
 }
 
-function syncDeviceStatus(DateTime $currentDate, DateTime $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
+function syncDeviceStatus(DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
-        $currentDate->modify('+1 day');
+        $currentDate = $currentDate->modify('+1 day');
         $loopToDate = $currentDate->format('Y-m-d');
-        if (new DateTime($loopToDate) > $endDate) {
+        if (new DateTimeImmutable($loopToDate) > $endDate) {
             $loopToDate = $endDate->format('Y-m-d');
         }
         $ch = curl_init();
