@@ -1,18 +1,18 @@
 <?php
-$oldSecureDomain = getenv('TARGET_NIGHTSCOUT_URL');
-$oldHash = sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET'));
-$newSecureDomain = getenv('DESTINATION_NIGHTSCOUT_URL');
-$hashedSecret = sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET'));
+$targetNightscoutUrl = getenv('TARGET_NIGHTSCOUT_URL');
+$targetNightscoutApiSecret = sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET'));
+$destinationNightscoutUrl = getenv('DESTINATION_NIGHTSCOUT_URL');
+$destinationNightscoutApiSecret = sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET'));
 
 $currentDate = new DateTimeImmutable();
 $currentDate = $currentDate->modify('-1 week');
 $endDate = new DateTimeImmutable();
 $endDate = $endDate->modify('+1 day');
 
-syncEndpoint('entries', 'dateString', $currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
-syncEndpoint('treatments', 'created_at', $currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
-syncEndpoint('devicestatus', 'created_at', $currentDate, $endDate, $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
-syncSingleton('profile', $oldSecureDomain, $oldHash, $newSecureDomain, $hashedSecret);
+syncEndpoint('entries', 'dateString', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
+syncEndpoint('treatments', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
+syncEndpoint('devicestatus', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
+syncSingleton('profile', $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
 
 function _fetchFromNightscout(string $url, string $hash): ?array
 {
@@ -59,7 +59,7 @@ function _postToNightscout(string $url, string $hash, array $data): void
     curl_close($ch);
 }
 
-function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void
+function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $targetNightscoutUrl, string $targetNightscoutApiSecret, string $destinationNightscoutUrl, string $destinationNightscoutApiSecret): void
 {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
@@ -72,7 +72,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
 
         $url = sprintf(
             '%s/api/v1/%s.json?count=all&find[%s][$lte]=%s&find[%s][$gte]=%s',
-            $oldSecureDomain,
+            $targetNightscoutUrl,
             $endpoint,
             $dateField,
             $loopToDate,
@@ -80,20 +80,20 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
             $loopFromDate
         );
 
-        $data = _fetchFromNightscout($url, $oldHash);
+        $data = _fetchFromNightscout($url, $targetNightscoutApiSecret);
 
         if (!empty($data)) {
-            _postToNightscout($newSecureDomain . '/api/v1/' . $endpoint, $hashedSecret, $data);
+            _postToNightscout($destinationNightscoutUrl . '/api/v1/' . $endpoint, $destinationNightscoutApiSecret, $data);
         }
     }
 }
 
-function syncSingleton(string $endpoint, string $oldSecureDomain, string $oldHash, string $newSecureDomain, string $hashedSecret): void
+function syncSingleton(string $endpoint, string $targetNightscoutUrl, string $targetNightscoutApiSecret, string $destinationNightscoutUrl, string $destinationNightscoutApiSecret): void
 {
-    $url = sprintf('%s/api/v1/%s.json', $oldSecureDomain, $endpoint);
-    $data = _fetchFromNightscout($url, $oldHash);
+    $url = sprintf('%s/api/v1/%s.json', $targetNightscoutUrl, $endpoint);
+    $data = _fetchFromNightscout($url, $targetNightscoutApiSecret);
 
     if (!empty($data)) {
-        _postToNightscout($newSecureDomain . '/api/v1/' . $endpoint, $hashedSecret, $data);
+        _postToNightscout($destinationNightscoutUrl . '/api/v1/' . $endpoint, $destinationNightscoutApiSecret, $data);
     }
 }
