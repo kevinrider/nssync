@@ -1,5 +1,8 @@
 <?php
 
+define('MAX_RETRIES', 3);
+define('RETRY_DELAY', 1); // in seconds
+
 $requiredEnvVars = [
     'TARGET_NIGHTSCOUT_URL',
     'TARGET_NIGHTSCOUT_API_SECRET',
@@ -43,21 +46,32 @@ foreach($endPointsToSync as $endpoint) {
 
 function _fetchFromNightscout(string $url, string $hash): ?array
 {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-    $headers = ['api-secret: ' . $hash];
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    $retries = 0;
 
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
-        curl_close($ch);
-        return null;
-    }
-    curl_close($ch);
-    return json_decode($result, true);
+    do {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        $headers = ['api-secret: ' . $hash];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $result = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
+            curl_close($ch);
+            $retries++;
+            if ($retries < MAX_RETRIES) {
+                sleep(RETRY_DELAY);
+            }
+        } else {
+            curl_close($ch);
+            return json_decode($result, true);
+        }
+    } while ($retries < MAX_RETRIES);
+
+    return null;
 }
 
 function _postToNightscout(string $url, string $hash, array $data): void
@@ -69,21 +83,33 @@ function _postToNightscout(string $url, string $hash, array $data): void
     }
     $newJSON = json_encode($newArray);
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $newJSON);
-    $headers = [
-        'Content-Type: application/json',
-        'api-secret: ' . $hash,
-    ];
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_exec($ch);
-    if (curl_errno($ch)) {
-        file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
-    }
-    curl_close($ch);
+    $retries = 0;
+
+    do {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $newJSON);
+        $headers = [
+            'Content-Type: application/json',
+            'api-secret: ' . $hash,
+        ];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
+            curl_close($ch);
+            $retries++;
+            if ($retries < MAX_RETRIES) {
+                sleep(RETRY_DELAY);
+            }
+        } else {
+            curl_close($ch);
+            return;
+        }
+    } while ($retries < MAX_RETRIES);
 }
 
 function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, array $source, array $destination, bool $deduplicate = false): void
