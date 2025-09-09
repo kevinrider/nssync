@@ -9,10 +9,17 @@ $currentDate = $currentDate->modify('-1 week');
 $endDate = new DateTimeImmutable();
 $endDate = $endDate->modify('+1 day');
 
-syncEndpoint('entries', 'dateString', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
-syncEndpoint('treatments', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
-syncEndpoint('devicestatus', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, true);
-syncEndpoint('profiles', 'startDate', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, true);
+$endPointsToSync = [
+    ['entries', 'dateString', false],
+    ['treatments', 'created_at', false],
+    ['devicestatus', 'created_at', true],
+    ['profiles', 'startDate', true],
+];
+
+foreach($endPointsToSync as $endpoint) {
+    [$endpoint, $dateField, $deduplicate] = $endpoint;
+    syncEndpoint($endpoint, $dateField, $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, $deduplicate);
+};
 
 function _fetchFromNightscout(string $url, string $hash): ?array
 {
