@@ -52,7 +52,7 @@ function _fetchFromNightscout(string $url, string $hash): ?array
 
     $result = curl_exec($ch);
     if (curl_errno($ch)) {
-        echo 'Error:' . curl_error($ch);
+        file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
         curl_close($ch);
         return null;
     }
@@ -81,7 +81,7 @@ function _postToNightscout(string $url, string $hash, array $data): void
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_exec($ch);
     if (curl_errno($ch)) {
-        echo 'Error:' . curl_error($ch);
+        file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
     }
     curl_close($ch);
 }
