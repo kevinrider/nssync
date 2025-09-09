@@ -14,10 +14,15 @@ foreach ($requiredEnvVars as $var) {
     }
 }
 
-$targetNightscoutUrl = getenv('TARGET_NIGHTSCOUT_URL');
-$targetNightscoutApiSecret = sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET'));
-$destinationNightscoutUrl = getenv('DESTINATION_NIGHTSCOUT_URL');
-$destinationNightscoutApiSecret = sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET'));
+$source = [
+    'url' => getenv('TARGET_NIGHTSCOUT_URL'),
+    'secret' => sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET')),
+];
+
+$destination = [
+    'url' => getenv('DESTINATION_NIGHTSCOUT_URL'),
+    'secret' => sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET')),
+];
 
 $currentDate = new DateTimeImmutable();
 $currentDate = $currentDate->modify('-1 week');
@@ -33,7 +38,7 @@ $endPointsToSync = [
 
 foreach($endPointsToSync as $endpoint) {
     [$endpoint, $dateField, $deduplicate] = $endpoint;
-    syncEndpoint($endpoint, $dateField, $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, $deduplicate);
+    syncEndpoint($endpoint, $dateField, $currentDate, $endDate, $source, $destination, $deduplicate);
 };
 
 function _fetchFromNightscout(string $url, string $hash): ?array
@@ -81,7 +86,7 @@ function _postToNightscout(string $url, string $hash, array $data): void
     curl_close($ch);
 }
 
-function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, string $targetNightscoutUrl, string $targetNightscoutApiSecret, string $destinationNightscoutUrl, string $destinationNightscoutApiSecret, bool $deduplicate = false): void
+function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, array $source, array $destination, bool $deduplicate = false): void
 {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
@@ -94,7 +99,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
 
         $url = sprintf(
             '%s/api/v1/%s.json?count=all&find[%s][$lte]=%s&find[%s][$gte]=%s',
-            $targetNightscoutUrl,
+            $source['url'],
             $endpoint,
             $dateField,
             $loopToDate,
@@ -102,7 +107,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
             $loopFromDate
         );
 
-        $sourceData = _fetchFromNightscout($url, $targetNightscoutApiSecret);
+        $sourceData = _fetchFromNightscout($url, $source['secret']);
 
         if (empty($sourceData)) {
             continue;
@@ -113,14 +118,14 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
         if ($deduplicate) {
             $destinationUrl = sprintf(
                 '%s/api/v1/%s.json?count=all&find[%s][$lte]=%s&find[%s][$gte]=%s',
-                $destinationNightscoutUrl,
+                $destination['url'],
                 $endpoint,
                 $dateField,
                 $loopToDate,
                 $dateField,
                 $loopFromDate
             );
-            $destinationData = _fetchFromNightscout($destinationUrl, $destinationNightscoutApiSecret);
+            $destinationData = _fetchFromNightscout($destinationUrl, $destination['secret']);
 
             if (is_null($destinationData)) {
                 continue;
@@ -139,7 +144,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
         }
 
         if (!empty($dataToPost)) {
-            _postToNightscout($destinationNightscoutUrl . '/api/v1/' . $endpoint, $destinationNightscoutApiSecret, $dataToPost);
+            _postToNightscout($destination['url'] . '/api/v1/' . $endpoint, $destination['secret'], $dataToPost);
         }
     }
 }
