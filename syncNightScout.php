@@ -100,6 +100,10 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
             );
             $destinationData = _fetchFromNightscout($destinationUrl, $destinationNightscoutApiSecret);
 
+            if (is_null($destinationData)) {
+                continue;
+            }
+
             if (!empty($destinationData)) {
                 $existingKeys = array_map(function($item) use ($dateField) {
                     return $item[$dateField];
