@@ -12,7 +12,7 @@ $endDate = $endDate->modify('+1 day');
 syncEndpoint('entries', 'dateString', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
 syncEndpoint('treatments', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
 syncEndpoint('devicestatus', 'created_at', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, true);
-//syncProfile('profile', $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret);
+syncEndpoint('profiles', 'startDate', $currentDate, $endDate, $targetNightscoutUrl, $targetNightscoutApiSecret, $destinationNightscoutUrl, $destinationNightscoutApiSecret, true);
 
 function _fetchFromNightscout(string $url, string $hash): ?array
 {
@@ -47,24 +47,6 @@ function _postToNightscout(string $url, string $hash, array $data): void
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $newJSON);
-    $headers = [
-        'Content-Type: application/json',
-        'api-secret: ' . $hash,
-    ];
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_exec($ch);
-    if (curl_errno($ch)) {
-        echo 'Error:' . curl_error($ch);
-    }
-    curl_close($ch);
-}
-
-function _deleteFromNightscout(string $url, string $hash): void
-{
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
     $headers = [
         'Content-Type: application/json',
         'api-secret: ' . $hash,
@@ -119,13 +101,13 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
             $destinationData = _fetchFromNightscout($destinationUrl, $destinationNightscoutApiSecret);
 
             if (!empty($destinationData)) {
-                $existingKeys = array_map(function($item) {
-                    return $item['created_at'];
+                $existingKeys = array_map(function($item) use ($dateField) {
+                    return $item[$dateField];
                 }, $destinationData);
                 $existingKeysSet = array_flip($existingKeys);
 
-                $dataToPost = array_filter($sourceData, function($item) use ($existingKeysSet) {
-                    return !isset($existingKeysSet[$item['created_at']]);
+                $dataToPost = array_filter($sourceData, function($item) use ($existingKeysSet, $dateField) {
+                    return !isset($existingKeysSet[$item[$dateField]]);
                 });
             }
         }
@@ -133,17 +115,5 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
         if (!empty($dataToPost)) {
             _postToNightscout($destinationNightscoutUrl . '/api/v1/' . $endpoint, $destinationNightscoutApiSecret, $dataToPost);
         }
-    }
-}
-
-function syncProfile(string $endpoint, string $targetNightscoutUrl, string $targetNightscoutApiSecret, string $destinationNightscoutUrl, string $destinationNightscoutApiSecret): void
-{
-    $sourceUrl = sprintf('%s/api/v1/%s.json', $targetNightscoutUrl, $endpoint);
-    $sourceData = _fetchFromNightscout($sourceUrl, $targetNightscoutApiSecret);
-
-    if (!empty($sourceData)) {
-        $destinationUrl = $destinationNightscoutUrl . '/api/v1/' . $endpoint;
-        _deleteFromNightscout($destinationUrl, $destinationNightscoutApiSecret);
-        _postToNightscout($destinationUrl, $destinationNightscoutApiSecret, $sourceData);
     }
 }
