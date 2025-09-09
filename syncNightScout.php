@@ -1,4 +1,19 @@
 <?php
+
+$requiredEnvVars = [
+    'TARGET_NIGHTSCOUT_URL',
+    'TARGET_NIGHTSCOUT_API_SECRET',
+    'DESTINATION_NIGHTSCOUT_URL',
+    'DESTINATION_NIGHTSCOUT_API_SECRET',
+];
+
+foreach ($requiredEnvVars as $var) {
+    if (getenv($var) === false) {
+        file_put_contents('php://stderr', "Error: Required environment variable $var is not set." . PHP_EOL);
+        exit(1);
+    }
+}
+
 $targetNightscoutUrl = getenv('TARGET_NIGHTSCOUT_URL');
 $targetNightscoutApiSecret = sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET'));
 $destinationNightscoutUrl = getenv('DESTINATION_NIGHTSCOUT_URL');
