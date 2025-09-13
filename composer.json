@@ -10,5 +10,10 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
+    },
+    "autoload": {
+        "psr-4": {
+            "Nssync\\": "src/"
+        }
     }
 }
