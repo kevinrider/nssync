@@ -170,9 +170,9 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
                 });
             }
         }
-        $endpoint = $endpoint == PROFILES_ENDPOINT ? PROFILE_ENDPOINT : $endpoint;
+        $transformedEndpoint = $endpoint == PROFILES_ENDPOINT ? PROFILE_ENDPOINT : $endpoint;
         if (!empty($dataToPost)) {
-            _postToNightscout($destination['url'] . '/api/v1/' . $endpoint, $destination['secret'], $dataToPost);
+            _postToNightscout($destination['url'] . '/api/v1/' . $transformedEndpoint, $destination['secret'], $dataToPost);
         }
     }
 }
