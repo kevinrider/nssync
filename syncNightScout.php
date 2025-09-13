@@ -1,7 +1,7 @@
 <?php
 
-define('MAX_RETRIES', 3);
-define('RETRY_DELAY', 1); // in seconds
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1; // in seconds
 
 $requiredEnvVars = [
     'TARGET_NIGHTSCOUT_URL',
