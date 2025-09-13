@@ -1,5 +1,12 @@
 <?php
 
+require 'vendor/autoload.php';
+
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Exception\RequestException;
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1; // in seconds
 const PROFILES_ENDPOINT = 'profiles';
@@ -41,80 +48,76 @@ $endPointsToSync = [
     [PROFILES_ENDPOINT, 'startDate', true],
 ];
 
+// Create a Guzzle client with retry middleware
+$handlerStack = HandlerStack::create();
+$handlerStack->push(Middleware::retry(
+    function ($retries, $request, $response, $exception) {
+        // Retry up to MAX_RETRIES times
+        if ($retries >= MAX_RETRIES) {
+            return false;
+        }
+
+        // Retry on server errors or connection exceptions
+        if ($exception instanceof RequestException || ($response && $response->getStatusCode() >= 500)) {
+            file_put_contents('php://stderr', "Request failed, retrying (" . ($retries + 1) . "/" . MAX_RETRIES . ")..." . PHP_EOL);
+            return true;
+        }
+
+        return false;
+    },
+    function ($retries) {
+        // Delay between retries
+        return RETRY_DELAY * 1000;
+    }
+));
+$client = new Client(['handler' => $handlerStack]);
+
+
 foreach($endPointsToSync as $endpoint) {
     [$endpoint, $dateField, $deduplicate] = $endpoint;
-    syncEndpoint($endpoint, $dateField, $currentDate, $endDate, $source, $destination, $deduplicate);
+    syncEndpoint($endpoint, $dateField, $currentDate, $endDate, $source, $destination, $client, $deduplicate);
 };
 
-function _fetchFromNightscout(string $url, string $hash): ?array
+function _fetchFromNightscout(string $url, string $hash, Client $client): ?array
 {
-    $retries = 0;
-
-    do {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        $headers = ['api-secret: ' . $hash];
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        $result = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
-            curl_close($ch);
-            $retries++;
-            if ($retries < MAX_RETRIES) {
-                sleep(RETRY_DELAY);
-            }
-        } else {
-            curl_close($ch);
-            return json_decode($result, true);
-        }
-    } while ($retries < MAX_RETRIES);
-
-    return null;
+    try {
+        $response = $client->get($url, [
+            'headers' => [
+                'api-secret' => $hash,
+            ],
+        ]);
+        return json_decode($response->getBody(), true);
+    } catch (RequestException $e) {
+        file_put_contents('php://stderr', 'Error: ' . $e->getMessage() . PHP_EOL);
+        return null;
+    }
 }
 
-function _postToNightscout(string $url, string $hash, array $data): void
+function _postToNightscout(string $url, string $hash, array $data, Client $client): void
 {
     $newArray = [];
     foreach ($data as $item) {
         unset($item['_id']);
         $newArray[] = $item;
     }
-    $newJSON = json_encode($newArray);
 
-    $retries = 0;
+    if (empty($newArray)) {
+        return;
+    }
 
-    do {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $newJSON);
-        $headers = [
-            'Content-Type: application/json',
-            'api-secret: ' . $hash,
-        ];
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            file_put_contents('php://stderr', 'Error:' . curl_error($ch) . PHP_EOL);
-            curl_close($ch);
-            $retries++;
-            if ($retries < MAX_RETRIES) {
-                sleep(RETRY_DELAY);
-            }
-        } else {
-            curl_close($ch);
-            return;
-        }
-    } while ($retries < MAX_RETRIES);
+    try {
+        $client->post($url, [
+            'headers' => [
+                'api-secret' => $hash,
+            ],
+            'json' => $newArray,
+        ]);
+    } catch (RequestException $e) {
+        file_put_contents('php://stderr', 'Error: ' . $e->getMessage() . PHP_EOL);
+    }
 }
 
-function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, array $source, array $destination, bool $deduplicate = false): void
+function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, array $source, array $destination, Client $client, bool $deduplicate = false): void
 {
     while ($currentDate < $endDate) {
         $loopFromDate = $currentDate->format('Y-m-d');
@@ -138,7 +141,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
             $loopFromDate
         );
 
-        $sourceData = _fetchFromNightscout($url, $source['secret']);
+        $sourceData = _fetchFromNightscout($url, $source['secret'], $client);
 
         if (empty($sourceData)) {
             continue;
@@ -156,7 +159,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
                 $dateField,
                 $loopFromDate
             );
-            $destinationData = _fetchFromNightscout($destinationUrl, $destination['secret']);
+            $destinationData = _fetchFromNightscout($destinationUrl, $destination['secret'], $client);
 
             if (is_null($destinationData)) {
                 continue;
@@ -175,7 +178,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
         }
         $transformedEndpoint = $endpoint == PROFILES_ENDPOINT ? PROFILE_ENDPOINT : $endpoint;
         if (!empty($dataToPost)) {
-            _postToNightscout($destination['url'] . '/api/v1/' . $transformedEndpoint, $destination['secret'], $dataToPost);
+            _postToNightscout($destination['url'] . '/api/v1/' . $transformedEndpoint, $destination['secret'], $dataToPost, $client);
         }
     }
 }
