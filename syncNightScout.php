@@ -2,6 +2,8 @@
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1; // in seconds
+const PROFILES_ENDPOINT = 'profiles';
+const PROFILE_ENDPOINT = 'profile';
 
 $requiredEnvVars = [
     'SOURCE_NIGHTSCOUT_URL',
@@ -36,7 +38,7 @@ $endPointsToSync = [
     ['entries', 'dateString', false],
     ['treatments', 'created_at', false],
     ['devicestatus', 'created_at', true],
-    ['profiles', 'startDate', true],
+    [PROFILES_ENDPOINT, 'startDate', true],
 ];
 
 foreach($endPointsToSync as $endpoint) {
@@ -168,7 +170,7 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
                 });
             }
         }
-
+        $endpoint = $endpoint == PROFILES_ENDPOINT ? PROFILE_ENDPOINT : $endpoint;
         if (!empty($dataToPost)) {
             _postToNightscout($destination['url'] . '/api/v1/' . $endpoint, $destination['secret'], $dataToPost);
         }
