@@ -4,8 +4,8 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1; // in seconds
 
 $requiredEnvVars = [
-    'TARGET_NIGHTSCOUT_URL',
-    'TARGET_NIGHTSCOUT_API_SECRET',
+    'SOURCE_NIGHTSCOUT_URL',
+    'SOURCE_NIGHTSCOUT_API_SECRET',
     'DESTINATION_NIGHTSCOUT_URL',
     'DESTINATION_NIGHTSCOUT_API_SECRET',
 ];
@@ -18,8 +18,8 @@ foreach ($requiredEnvVars as $var) {
 }
 
 $source = [
-    'url' => getenv('TARGET_NIGHTSCOUT_URL'),
-    'secret' => sha1(getenv('TARGET_NIGHTSCOUT_API_SECRET')),
+    'url' => getenv('SOURCE_NIGHTSCOUT_URL'),
+    'secret' => sha1(getenv('SOURCE_NIGHTSCOUT_API_SECRET')),
 ];
 
 $destination = [
