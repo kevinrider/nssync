@@ -124,6 +124,9 @@ function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $cu
         if ($currentDate > $endDate) {
             $loopToDate = $endDate->format('Y-m-d');
         }
+        if($loopToDate == $loopFromDate && $loopFromDate == $endDate->format('Y-m-d')) {
+            break;
+        }
 
         $url = sprintf(
             '%s/api/v1/%s.json?count=all&find[%s][$lte]=%s&find[%s][$gte]=%s',
