@@ -4,40 +4,28 @@ namespace Nssync;
 
 class Logger
 {
-    /**
-     * @param string $message
-     * @return void
-     */
+    private const COLOR_INFO = "\033[0;32m";
+    private const COLOR_WARNING = "\033[1;33m";
+    private const COLOR_ERROR = "\033[0;31m";
+    private const COLOR_RESET = "\033[0m";
+
     public function info(string $message): void
     {
-        $this->log('INFO', $message);
+        $this->log('INFO', $message, self::COLOR_INFO);
     }
 
-    /**
-     * @param string $message
-     * @return void
-     */
     public function warning(string $message): void
     {
-        $this->log('WARNING', $message);
+        $this->log('WARNING', $message, self::COLOR_WARNING);
     }
 
-    /**
-     * @param string $message
-     * @return void
-     */
     public function error(string $message): void
     {
-        $this->log('ERROR', $message);
+        $this->log('ERROR', $message, self::COLOR_ERROR);
     }
 
-    /**
-     * @param string $level
-     * @param string $message
-     * @return void
-     */
-    private function log(string $level, string $message): void
+    private function log(string $level, string $message, string $color): void
     {
-        file_put_contents('php://stderr', "[$level] $message".PHP_EOL);
+        file_put_contents('php://stderr',"[" . $color . $level . self::COLOR_RESET . "] $message" . PHP_EOL);
     }
 }
