@@ -4,10 +4,13 @@ namespace Nssync;
 
 class Logger
 {
-    private const COLOR_INFO = "\033[0;32m";
-    private const COLOR_WARNING = "\033[1;33m";
-    private const COLOR_ERROR = "\033[0;31m";
-    private const COLOR_RESET = "\033[0m";
+    private const string COLOR_INFO = "\033[0;32m";
+
+    private const string COLOR_WARNING = "\033[1;33m";
+
+    private const string COLOR_ERROR = "\033[0;31m";
+
+    private const string COLOR_RESET = "\033[0m";
 
     public function info(string $message): void
     {
@@ -26,6 +29,6 @@ class Logger
 
     private function log(string $level, string $message, string $color): void
     {
-        file_put_contents('php://stderr',"[" . $color . $level . self::COLOR_RESET . "] $message" . PHP_EOL);
+        file_put_contents('php://stderr', '['.$color.$level.self::COLOR_RESET."] $message".PHP_EOL);
     }
 }
