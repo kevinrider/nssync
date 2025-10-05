@@ -13,8 +13,11 @@ class NightscoutClient
 {
     private Client $client;
 
-    public function __construct()
+    private Logger $logger;
+
+    public function __construct(Logger $logger)
     {
+        $this->logger = $logger;
         $handlerStack = HandlerStack::create();
         $handlerStack->push(Middleware::retry(
             function ($retries, $request, $response, $exception) {
@@ -23,7 +26,7 @@ class NightscoutClient
                 }
                 $isRetryError = $exception instanceof ConnectException || $exception instanceof RequestException || ($response && $response->getStatusCode() >= 500);
                 if ($isRetryError) {
-                    file_put_contents('php://stderr', 'Request failed, retrying ('.($retries + 1).'/'. 3 .')...'.PHP_EOL);
+                    $this->logger->warning('Request failed, retrying ('.($retries + 1).'/'. 3 .')...');
 
                     return true;
                 }
@@ -51,7 +54,7 @@ class NightscoutClient
 
             return json_decode($response->getBody(), true);
         } catch (RequestException $e) {
-            file_put_contents('php://stderr', 'Error: '.$e->getMessage().PHP_EOL);
+            $this->logger->error($e->getMessage());
 
             return null;
         }
@@ -78,7 +81,7 @@ class NightscoutClient
                 'json' => $newArray,
             ]);
         } catch (RequestException $e) {
-            file_put_contents('php://stderr', 'Error: '.$e->getMessage().PHP_EOL);
+            $this->logger->error($e->getMessage());
         }
     }
 }
