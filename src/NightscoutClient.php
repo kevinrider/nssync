@@ -3,6 +3,7 @@
 namespace Nssync;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -19,16 +20,15 @@ class NightscoutClient
                 if ($retries >= 3) {
                     return false;
                 }
-
-                if ($exception instanceof RequestException || ($response && $response->getStatusCode() >= 500)) {
+                $isRetryError = $exception instanceof ConnectException || $exception instanceof RequestException || ($response && $response->getStatusCode() >= 500);
+                if ($isRetryError) {
                     file_put_contents('php://stderr', "Request failed, retrying (" . ($retries + 1) . "/" . 3 . ")..." . PHP_EOL);
                     return true;
                 }
-
                 return false;
             },
-            function ($retries) {
-                return 1 * 1000;
+            function (int $retries) {
+                return 1000 * (2 ** $retries);
             }
         ));
         $this->client = new Client(['handler' => $handlerStack]);
