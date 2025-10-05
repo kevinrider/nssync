@@ -2,6 +2,7 @@
 
 require 'vendor/autoload.php';
 
+use GuzzleHttp\Exception\GuzzleException;
 use Nssync\NightscoutClient;
 use Nssync\NightscoutSyncer;
 
@@ -46,5 +47,9 @@ $syncer = new NightscoutSyncer($client, $source, $destination);
 
 foreach ($endPointsToSync as $endpoint) {
     [$endpointName, $dateField, $deduplicate] = $endpoint;
-    $syncer->syncEndpoint($endpointName, $dateField, $currentDate, $endDate, $deduplicate);
+    try {
+        $syncer->syncEndpoint($endpointName, $dateField, $currentDate, $endDate, $deduplicate);
+    } catch (GuzzleException $e) {
+        file_put_contents('php://stderr', 'GuzzleException caught, continuing: '.$e->getMessage().PHP_EOL);
+    }
 }
