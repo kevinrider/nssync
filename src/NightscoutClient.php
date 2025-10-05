@@ -4,6 +4,7 @@ namespace Nssync;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -36,6 +37,9 @@ class NightscoutClient
         $this->client = new Client(['handler' => $handlerStack]);
     }
 
+    /**
+     * @throws GuzzleException
+     */
     public function fetch(string $url, string $hash): ?array
     {
         try {
@@ -53,6 +57,9 @@ class NightscoutClient
         }
     }
 
+    /**
+     * @throws GuzzleException
+     */
     public function post(string $url, string $hash, array $data): void
     {
         $newArray = [];
