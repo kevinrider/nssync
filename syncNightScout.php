@@ -3,8 +3,11 @@
 require 'vendor/autoload.php';
 
 use GuzzleHttp\Exception\GuzzleException;
+use Nssync\Logger;
 use Nssync\NightscoutClient;
 use Nssync\NightscoutSyncer;
+
+$logger = new Logger;
 
 $requiredEnvVars = [
     'SOURCE_NIGHTSCOUT_URL',
@@ -15,7 +18,7 @@ $requiredEnvVars = [
 
 foreach ($requiredEnvVars as $var) {
     if (getenv($var) === false) {
-        file_put_contents('php://stderr', "Error: Required environment variable $var is not set.".PHP_EOL);
+        $logger->error("Required environment variable $var is not set.");
         exit(1);
     }
 }
@@ -42,7 +45,7 @@ $endPointsToSync = [
     ['profiles', 'startDate', true],
 ];
 
-$client = new NightscoutClient;
+$client = new NightscoutClient($logger);
 $syncer = new NightscoutSyncer($client, $source, $destination);
 
 foreach ($endPointsToSync as $endpoint) {
@@ -50,6 +53,6 @@ foreach ($endPointsToSync as $endpoint) {
     try {
         $syncer->syncEndpoint($endpointName, $dateField, $currentDate, $endDate, $deduplicate);
     } catch (GuzzleException $e) {
-        file_put_contents('php://stderr', 'GuzzleException caught, continuing: '.$e->getMessage().PHP_EOL);
+        $logger->error('GuzzleException caught, continuing: '.$e->getMessage());
     }
 }
