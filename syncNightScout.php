@@ -14,7 +14,7 @@ $requiredEnvVars = [
 
 foreach ($requiredEnvVars as $var) {
     if (getenv($var) === false) {
-        file_put_contents('php://stderr', "Error: Required environment variable $var is not set." . PHP_EOL);
+        file_put_contents('php://stderr', "Error: Required environment variable $var is not set.".PHP_EOL);
         exit(1);
     }
 }
@@ -29,9 +29,9 @@ $destination = [
     'secret' => sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET')),
 ];
 
-$currentDate = new DateTimeImmutable();
+$currentDate = new DateTimeImmutable;
 $currentDate = $currentDate->modify('-1 week');
-$endDate = new DateTimeImmutable();
+$endDate = new DateTimeImmutable;
 $endDate = $endDate->modify('+1 day');
 
 $endPointsToSync = [
@@ -41,10 +41,10 @@ $endPointsToSync = [
     ['profiles', 'startDate', true],
 ];
 
-$client = new NightscoutClient();
+$client = new NightscoutClient;
 $syncer = new NightscoutSyncer($client, $source, $destination);
 
-foreach($endPointsToSync as $endpoint) {
+foreach ($endPointsToSync as $endpoint) {
     [$endpointName, $dateField, $deduplicate] = $endpoint;
     $syncer->syncEndpoint($endpointName, $dateField, $currentDate, $endDate, $deduplicate);
-};
+}

@@ -7,10 +7,13 @@ use DateTimeImmutable;
 class NightscoutSyncer
 {
     private const PROFILES_ENDPOINT = 'profiles';
+
     private const PROFILE_ENDPOINT = 'profile';
 
     private NightscoutClient $client;
+
     private array $source;
+
     private array $destination;
 
     public function __construct(NightscoutClient $client, array $source, array $destination)
@@ -68,20 +71,20 @@ class NightscoutSyncer
                     continue;
                 }
 
-                if (!empty($destinationData)) {
+                if (! empty($destinationData)) {
                     $existingKeys = array_map(function ($item) use ($dateField) {
                         return $item[$dateField];
                     }, $destinationData);
                     $existingKeysSet = array_flip($existingKeys);
 
                     $dataToPost = array_filter($sourceData, function ($item) use ($existingKeysSet, $dateField) {
-                        return !isset($existingKeysSet[$item[$dateField]]);
+                        return ! isset($existingKeysSet[$item[$dateField]]);
                     });
                 }
             }
             $transformedEndpoint = $endpoint == self::PROFILES_ENDPOINT ? self::PROFILE_ENDPOINT : $endpoint;
-            if (!empty($dataToPost)) {
-                $this->client->post($this->destination['url'] . '/api/v1/' . $transformedEndpoint, $this->destination['secret'], $dataToPost);
+            if (! empty($dataToPost)) {
+                $this->client->post($this->destination['url'].'/api/v1/'.$transformedEndpoint, $this->destination['secret'], $dataToPost);
             }
         }
     }

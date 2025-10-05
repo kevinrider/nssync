@@ -22,9 +22,11 @@ class NightscoutClient
                 }
                 $isRetryError = $exception instanceof ConnectException || $exception instanceof RequestException || ($response && $response->getStatusCode() >= 500);
                 if ($isRetryError) {
-                    file_put_contents('php://stderr', "Request failed, retrying (" . ($retries + 1) . "/" . 3 . ")..." . PHP_EOL);
+                    file_put_contents('php://stderr', 'Request failed, retrying ('.($retries + 1).'/'. 3 .')...'.PHP_EOL);
+
                     return true;
                 }
+
                 return false;
             },
             function (int $retries) {
@@ -42,9 +44,11 @@ class NightscoutClient
                     'api-secret' => $hash,
                 ],
             ]);
+
             return json_decode($response->getBody(), true);
         } catch (RequestException $e) {
-            file_put_contents('php://stderr', 'Error: ' . $e->getMessage() . PHP_EOL);
+            file_put_contents('php://stderr', 'Error: '.$e->getMessage().PHP_EOL);
+
             return null;
         }
     }
@@ -56,11 +60,9 @@ class NightscoutClient
             unset($item['_id']);
             $newArray[] = $item;
         }
-
         if (empty($newArray)) {
             return;
         }
-
         try {
             $this->client->post($url, [
                 'headers' => [
@@ -69,7 +71,7 @@ class NightscoutClient
                 'json' => $newArray,
             ]);
         } catch (RequestException $e) {
-            file_put_contents('php://stderr', 'Error: ' . $e->getMessage() . PHP_EOL);
+            file_put_contents('php://stderr', 'Error: '.$e->getMessage().PHP_EOL);
         }
     }
 }
