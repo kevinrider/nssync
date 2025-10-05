@@ -3,12 +3,13 @@
 namespace Nssync;
 
 use DateTimeImmutable;
+use GuzzleHttp\Exception\GuzzleException;
 
 class NightscoutSyncer
 {
-    private const PROFILES_ENDPOINT = 'profiles';
+    private const string PROFILES_ENDPOINT = 'profiles';
 
-    private const PROFILE_ENDPOINT = 'profile';
+    private const string PROFILE_ENDPOINT = 'profile';
 
     private NightscoutClient $client;
 
@@ -23,6 +24,9 @@ class NightscoutSyncer
         $this->destination = $destination;
     }
 
+    /**
+     * @throws GuzzleException
+     */
     public function syncEndpoint(string $endpoint, string $dateField, DateTimeImmutable $currentDate, DateTimeImmutable $endDate, bool $deduplicate = false): void
     {
         while ($currentDate < $endDate) {
