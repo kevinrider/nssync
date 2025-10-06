@@ -12,6 +12,17 @@ class Logger
 
     private const string COLOR_RESET = "\033[0m";
 
+    /** @var resource */
+    private $stream;
+
+    public function __construct($stream = null)
+    {
+        if ($stream === null) {
+            $stream = fopen('php://stderr', 'w');
+        }
+        $this->stream = $stream;
+    }
+
     public function info(string $message): void
     {
         $this->log('INFO', $message, self::COLOR_INFO);
@@ -29,6 +40,6 @@ class Logger
 
     private function log(string $level, string $message, string $color): void
     {
-        file_put_contents('php://stderr', '['.$color.$level.self::COLOR_RESET."] $message".PHP_EOL);
+        fwrite($this->stream, '['.$color.$level.self::COLOR_RESET."] $message".PHP_EOL);
     }
 }
