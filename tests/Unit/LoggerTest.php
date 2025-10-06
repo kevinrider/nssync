@@ -2,29 +2,19 @@
 
 use Nssync\Logger;
 
-test('logs info messages', function () {
-    ob_start();
-    $logger = new Logger();
-    $logger->info('This is an info message.');
-    $output = ob_get_clean();
+test('logs messages with correct level and color', function (string $method, string $message, string $expected) {
+    $stream = fopen('php://memory', 'w');
+    $logger = new Logger($stream);
 
-    expect($output)->toContain("\033[0;32m[INFO] This is an info message.\033[0m");
-});
+    $logger->{$method}($message);
 
-test('logs warning messages', function () {
-    ob_start();
-    $logger = new Logger();
-    $logger->warning('This is a warning message.');
-    $output = ob_get_clean();
+    rewind($stream);
+    $output = stream_get_contents($stream);
+    fclose($stream);
 
-    expect($output)->toContain("\033[1;33m[WARNING] This is a warning message.\033[0m");
-});
-
-test('logs error messages', function () {
-    ob_start();
-    $logger = new Logger();
-    $logger->error('This is an error message.');
-    $output = ob_get_clean();
-
-    expect($output)->toContain("\033[0;31m[ERROR] This is an error message.\033[0m");
-});
+    expect($output)->toContain($expected);
+})->with([
+    'info' => ['info', 'This is an info message.', "[\033[0;32mINFO\033[0m] This is an info message."],
+    'warning' => ['warning', 'This is a warning message.', "[\033[1;33mWARNING\033[0m] This is a warning message."],
+    'error' => ['error', 'This is an error message.', "[\033[0;31mERROR\033[0m] This is an error message."],
+]);
