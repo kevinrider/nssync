@@ -15,29 +15,34 @@ class NightscoutClient
 
     private Logger $logger;
 
-    public function __construct(Logger $logger)
+    public function __construct(Logger $logger, ?Client $client = null)
     {
         $this->logger = $logger;
-        $handlerStack = HandlerStack::create();
-        $handlerStack->push(Middleware::retry(
-            function ($retries, $request, $response, $exception) {
-                if ($retries >= 3) {
+
+        if ($client === null) {
+            $handlerStack = HandlerStack::create();
+            $handlerStack->push(Middleware::retry(
+                function ($retries, $request, $response, $exception) {
+                    if ($retries >= 3) {
+                        return false;
+                    }
+                    $isRetryError = $exception instanceof ConnectException || $exception instanceof RequestException || ($response && $response->getStatusCode() >= 500);
+                    if ($isRetryError) {
+                        $this->logger->warning('Request failed, retrying ('.($retries + 1).'/'. 3 .')...');
+
+                        return true;
+                    }
+
                     return false;
+                },
+                function (int $retries) {
+                    return 1000 * (2 ** $retries);
                 }
-                $isRetryError = $exception instanceof ConnectException || $exception instanceof RequestException || ($response && $response->getStatusCode() >= 500);
-                if ($isRetryError) {
-                    $this->logger->warning('Request failed, retrying ('.($retries + 1).'/'. 3 .')...');
+            ));
+            $client = new Client(['handler' => $handlerStack]);
+        }
 
-                    return true;
-                }
-
-                return false;
-            },
-            function (int $retries) {
-                return 1000 * (2 ** $retries);
-            }
-        ));
-        $this->client = new Client(['handler' => $handlerStack]);
+        $this->client = $client;
     }
 
     /**
