@@ -16,5 +16,10 @@
         "psr-4": {
             "Nssync\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
     }
 }
