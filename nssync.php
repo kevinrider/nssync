@@ -7,7 +7,7 @@ use Nssync\Logger;
 use Nssync\NightscoutClient;
 use Nssync\NightscoutSyncer;
 
-$logger = new Logger;
+$logger = new Logger();
 
 $requiredEnvVars = [
     'SOURCE_NIGHTSCOUT_URL',
@@ -33,9 +33,9 @@ $destination = [
     'secret' => sha1(getenv('DESTINATION_NIGHTSCOUT_API_SECRET')),
 ];
 
-$currentDate = new DateTimeImmutable;
+$currentDate = new DateTimeImmutable();
 $currentDate = $currentDate->modify('-1 week');
-$endDate = new DateTimeImmutable;
+$endDate = new DateTimeImmutable();
 $endDate = $endDate->modify('+1 day');
 
 $endPointsToSync = [
