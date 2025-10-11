@@ -6,7 +6,8 @@
         "laravel/pint": "^1.24",
         "mockery/mockery": "^1.6.2",
         "pestphp/pest": "^4.1",
-        "symfony/var-dumper": "^7.3"
+        "symfony/var-dumper": "^7.3",
+        "mikey179/vfsstream": "^1.6"
     },
     "config": {
         "allow-plugins": {
