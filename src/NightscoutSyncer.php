@@ -113,7 +113,6 @@ class NightscoutSyncer
 
         $updatedCache = $cachedOverrides;
         foreach ($cachedOverrides as $index => $override) {
-            // Fetch the latest version of the override from the source using its UUID
             $sourceOverrideUrl = sprintf(
                 '%s/api/v1/treatments.json?find[_id]=%s',
                 $this->source['url'],
@@ -123,14 +122,11 @@ class NightscoutSyncer
             $sourceOverride = $sourceOverrideData[0] ?? null;
 
             if (empty($sourceOverride)) {
-                // The override was deleted on the source, remove from cache
                 unset($updatedCache[$index]);
                 continue;
             }
 
-            // Check if the override is now complete (has a duration and is not indefinite)
-            if (isset($sourceOverride['duration']) && (!isset($sourceOverride['durationType']) || $sourceOverride['durationType'] !== 'indefinite')) {
-                // The override has ended. We need to update it on the destination.
+            if (! $this->isOverrideActive($sourceOverride)) {
                 // Nightscout's API handles POST as an update if a matching record exists.
                 $this->client->post(
                     $this->destination['url'].'/api/v1/'.self::TREATMENTS_ENDPOINT,
@@ -156,23 +152,7 @@ class NightscoutSyncer
 
         foreach ($sourceData as $treatment) {
             if (isset($treatment['eventType']) && $treatment['eventType'] === 'Temporary Override') {
-                $isActive = false;
-                // An override is active if its durationType is 'indefinite'
-                if (isset($treatment['durationType']) && $treatment['durationType'] === 'indefinite') {
-                    $isActive = true;
-                } // Or if it does not have a duration set yet
-                elseif (!isset($treatment['duration'])) {
-                    $isActive = true;
-                } // Or if the duration has not expired yet
-                elseif (isset($treatment['created_at'])) {
-                    $createdAt = new DateTimeImmutable($treatment['created_at']);
-                    $endTime = $createdAt->modify('+'.(int)$treatment['duration'].' minutes');
-                    if ($endTime > new DateTimeImmutable()) {
-                        $isActive = true;
-                    }
-                }
-
-                if ($isActive && ! in_array($treatment['_id'], $existingIds)) {
+                if ($this->isOverrideActive($treatment) && ! in_array($treatment['_id'], $existingIds)) {
                     $cachedOverrides[] = [
                         '_id' => $treatment['_id'],
                         'created_at' => $treatment['created_at'],
@@ -182,6 +162,30 @@ class NightscoutSyncer
         }
 
         $this->writeToCache(array_values(array_unique($cachedOverrides, SORT_REGULAR)));
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function isOverrideActive(array $treatment): bool
+    {
+        // An override is active if its durationType is 'indefinite'
+        if (isset($treatment['durationType']) && $treatment['durationType'] === 'indefinite') {
+            return true;
+        }
+        // Or if it does not have a duration set yet
+        if (!isset($treatment['duration'])) {
+            return true;
+        }
+        // Or if the duration has not expired yet
+        if (isset($treatment['created_at'])) {
+            $createdAt = new DateTimeImmutable($treatment['created_at']);
+            $endTime = $createdAt->modify('+'.(int)$treatment['duration'].' minutes');
+            if ($endTime > new DateTimeImmutable()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function readFromCache(): array
