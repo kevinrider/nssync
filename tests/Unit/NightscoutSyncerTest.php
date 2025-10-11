@@ -77,14 +77,14 @@ test('syncEndpoint caches various types of active overrides', function () {
     $dateField = 'created_at';
     $currentDate = new DateTimeImmutable('2023-01-01');
     $endDate = new DateTimeImmutable('2023-01-02');
-
+    $now = (new DateTimeImmutable())->format('c');
     $sourceData = [
         // Active: Indefinite
         ['eventType' => 'Temporary Override', '_id' => 'active1', 'created_at' => '2023-01-01T10:00:00Z', 'durationType' => 'indefinite'],
         // Active: No duration yet
         ['eventType' => 'Temporary Override', '_id' => 'active2', 'created_at' => '2023-01-01T11:00:00Z'],
         // Active: Duration not expired
-        ['eventType' => 'Temporary Override', '_id' => 'active3', 'created_at' => (new DateTimeImmutable())->format('c'), 'duration' => 60],
+        ['eventType' => 'Temporary Override', '_id' => 'active3', 'created_at' => $now, 'duration' => 60],
         // Inactive: Expired duration
         ['eventType' => 'Temporary Override', '_id' => 'inactive1', 'created_at' => '2023-01-01T12:00:00Z', 'duration' => 30],
         // Not an override
@@ -100,7 +100,7 @@ test('syncEndpoint caches various types of active overrides', function () {
     $expectedCache = [
         ['_id' => 'active1', 'created_at' => '2023-01-01T10:00:00Z'],
         ['_id' => 'active2', 'created_at' => '2023-01-01T11:00:00Z'],
-        ['_id' => 'active3', 'created_at' => (new DateTimeImmutable())->format('c')],
+        ['_id' => 'active3', 'created_at' => $now],
     ];
 
     $cachedData = json_decode(file_get_contents($this->cacheFile), true);
