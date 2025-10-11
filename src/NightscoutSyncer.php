@@ -11,7 +11,7 @@ class NightscoutSyncer
     private const string PROFILES_ENDPOINT = 'profiles';
     private const string PROFILE_ENDPOINT = 'profile';
     private const string TREATMENTS_ENDPOINT = 'treatments';
-    private const string OVERRIDE_CACHE_FILE = __DIR__.'/../.cache/active_overrides.json';
+    private static string $OVERRIDE_CACHE_FILE = __DIR__.'/../.cache/active_overrides.json';
 
     private NightscoutClient $client;
 
@@ -190,15 +190,15 @@ class NightscoutSyncer
 
     private function readFromCache(): array
     {
-        if (! file_exists(self::OVERRIDE_CACHE_FILE)) {
+        if (! file_exists(self::$OVERRIDE_CACHE_FILE)) {
             return [];
         }
-        $content = file_get_contents(self::OVERRIDE_CACHE_FILE);
+        $content = file_get_contents(self::$OVERRIDE_CACHE_FILE);
         return json_decode($content, true) ?: [];
     }
 
     private function writeToCache(array $data): void
     {
-        file_put_contents(self::OVERRIDE_CACHE_FILE, json_encode($data, JSON_PRETTY_PRINT));
+        file_put_contents(self::$OVERRIDE_CACHE_FILE, json_encode($data, JSON_PRETTY_PRINT));
     }
 }
