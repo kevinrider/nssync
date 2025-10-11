@@ -11,7 +11,7 @@ class NightscoutSyncer
     private const string PROFILES_ENDPOINT = 'profiles';
     private const string PROFILE_ENDPOINT = 'profile';
     private const string TREATMENTS_ENDPOINT = 'treatments';
-    private const string OVERRIDE_CACHE_FILE = __DIR__.'/../../.cache/active_overrides.json';
+    private const string OVERRIDE_CACHE_FILE = __DIR__.'/../.cache/active_overrides.json';
 
     private NightscoutClient $client;
 
