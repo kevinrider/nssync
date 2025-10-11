@@ -56,3 +56,11 @@ foreach ($endPointsToSync as $endpoint) {
         $logger->error('GuzzleException caught, continuing: '.$e->getMessage());
     }
 }
+
+try {
+    $logger->info('Syncing cached overrides...');
+        $syncer->syncCachedOverrides();
+    $logger->info('Cached overrides sync complete.');
+} catch (Exception|GuzzleException $e) {
+    $logger->error('Exception caught during cached override sync: '.$e->getMessage());
+}
