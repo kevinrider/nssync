@@ -114,7 +114,7 @@ class NightscoutSyncer
         $updatedCache = $cachedOverrides;
         foreach ($cachedOverrides as $index => $override) {
             $sourceOverrideUrl = sprintf(
-                '%s/api/v1/treatments.json?find[_id]=%s',
+                '%s/api/v1/treatments.json?find[_id][$eq]=%s',
                 $this->source['url'],
                 $override['_id']
             );
