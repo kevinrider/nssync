@@ -39,7 +39,7 @@ test('syncCachedOverrides updates and removes completed override from cache', fu
         'duration' => 60, // 60 minutes, ended in the past
     ];
 
-    $fetchUrl = 'https://source.com/api/v1/treatments.json?find[_id]=override1';
+    $fetchUrl = 'https://source.com/api/v1/treatments.json?find[_id][$eq]=override1';
     $this->client->shouldReceive('fetch')->with($fetchUrl, 'source-secret')->andReturn([$sourceOverride]);
 
     $postUrl = 'https://destination.com/api/v1/treatments';
@@ -61,7 +61,7 @@ test('syncCachedOverrides keeps active override in cache', function () {
         'duration' => 120, // 120 minutes, still active
     ];
 
-    $fetchUrl = 'https://source.com/api/v1/treatments.json?find[_id]=override2';
+    $fetchUrl = 'https://source.com/api/v1/treatments.json?find[_id][$eq]=override2';
     $this->client->shouldReceive('fetch')->with($fetchUrl, 'source-secret')->andReturn([$sourceOverride]);
 
     $this->client->shouldNotReceive('post');
