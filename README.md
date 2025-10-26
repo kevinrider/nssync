@@ -8,11 +8,11 @@ The script syncs the last seven days of data, in increments of one day, for the 
 - `devicestatus`
 - `profiles`
 
-For regular syncronization usage, `nssync` includes special handling for long-running "Temporary Override" treatments to ensure they are correctly updated when they end, even if that occurs outside the default seven day sync window.
+For regular synchronization usage, `nssync` includes special handling for long-running "Temporary Override" treatments to ensure they are correctly updated when they end, even if that occurs outside the default seven day sync window.
 
 ## Installation
 
-1. **Install PHP:** If your OS does not have PHP 8.0 or greater already installed, please visit [php.new](https://php.new/). Their script will set up an easy-to-use local installation of the latest PHP version along with composer (PHP's package manager) and environment setup.
+1. **Install PHP:** If your OS does not have PHP 8.0 or greater already installed, the third-party [php.new](https://php.new/) script can set up an easy-to-use local installation of the latest PHP version along with composer (PHP's package manager) and environment setup.
 
 
 2. **Clone the repository:**
@@ -30,7 +30,7 @@ For regular syncronization usage, `nssync` includes special handling for long-ru
 
 ## Configuration
 
-Configuration is handled through environment variables. You can set these directly in your shell, or create a `.env` file and use a library like `vlucas/phpdotenv`(https://github.com/vlucas/phpdotenv) if you prefer (note: this is not included by default).
+Configuration is handled through environment variables. You can set these directly in your shell, or create a `.env` file and use a library like [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) if you prefer (note: this is not included by default).
 
 ### Required Environment Variables
 
@@ -53,7 +53,7 @@ export DESTINATION_NIGHTSCOUT_API_SECRET='another-secret-api-key'
 
 Don't forget to apply the bash profile changes:
 ```bash
-source ~/.bashrc (or similar depending on your shell)
+source ~/.bashrc # (or similar depending on your shell)
 ```
 ## Usage
 
@@ -63,16 +63,16 @@ The script is designed to be executed from the command line.
 php nssync.php
 ```
 
-If you are only making a one time copy of a source Nightscout site, adjust the following line in `nssync`.php:
-````
+If you are only making a one-time copy of a source Nightscout site, adjust the following line in `nssync.php`:
+```php
 $currentDate = $currentDate->modify('-1 week');
-````
+```
 to whatever time frame you need using [DateTimeImmutable relative formats syntax](https://www.php.net/manual/en/datetime.formats.php). For example:
 
-````
+```php
 $currentDate = $currentDate->modify('-3 years');
-````
-would attempt to sync the previous 3 years (from today) of Nightscout data. While this script will work for long time periods, a MongoDB migration (mongodump/mongorestore) is probably easier and faster if you have access to the cli on the source and destination servers.
+```
+This would attempt to sync the previous 3 years (from today) of Nightscout data. While this script can handle long time periods, a direct MongoDB migration (`mongodump`/`mongorestore`) is likely faster and easier if you have command-line access to both servers.
 
 ### Scheduling with Cron
 
@@ -99,14 +99,14 @@ This example does the following:
 
 ### Scheduling with Watch
 
-An alternative to cron is to use watch and screen, the following example runs `nssync` every ten minutes.
+An alternative to cron is to use `watch` and `screen`. The following example runs `nssync` every ten minutes. This method is simpler to set up but will not persist if the server is rebooted.
 
-````
+```
 screen
 watch -n 600 php nssync.php
 Ctrl-a d
-````
-to reattach to the screen session:
-````
+```
+To reattach to the screen session:
+```
 screen -r
-````
+```
