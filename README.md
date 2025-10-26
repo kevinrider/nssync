@@ -1,6 +1,6 @@
 # Nightscout Sync Utility (nssync)
 
-`nssync` is a command-line utility written in PHP for synchronizing data between two Nightscout instances. It is designed to be run periodically to keep a destination (e.g. backup or follower) Nightscout site in sync with a primary (source) site.
+`nssync` is a command-line utility written in PHP for synchronizing data between two [Nightscout](https://github.com/nightscout/cgm-remote-monitor) instances. It is designed to be run periodically to keep a destination (e.g. backup or follower) Nightscout site in sync with a primary (source) site.
 
 The script syncs the last seven days of data, in increments of one day, for the following MongoDB collections:
 - `entries`
